@@ -1,7 +1,9 @@
 let map;
+let fromInput, toInput;
+let suggestionsFrom, suggestionsTo;
 
+// Инициализация карты
 function initMap() {
-    // Инициализация карты с центром в Сунтаре
     map = new ymaps.Map('map', {
         center: [62.1575, 117.6503], // Координаты Сунтара
         zoom: 14
@@ -22,11 +24,48 @@ function initMap() {
     });
     map.geoObjects.add(taxi1);
     map.geoObjects.add(taxi2);
+
+    // Инициализация элементов ввода
+    fromInput = document.getElementById('from');
+    toInput = document.getElementById('to');
+    suggestionsFrom = document.getElementById('suggestions-from');
+    suggestionsTo = document.getElementById('suggestions-to');
+
+    // Обработчики ввода
+    fromInput.addEventListener('input', () => fetchSuggestions(fromInput, suggestionsFrom));
+    toInput.addEventListener('input', () => fetchSuggestions(toInput, suggestionsTo));
 }
 
+// Получение подсказок для адреса
+function fetchSuggestions(input, suggestionsContainer) {
+    const query = input.value;
+    if (query.length < 3) {
+        suggestionsContainer.innerHTML = '';
+        return;
+    }
+
+    const url = `https://suggest-maps.yandex.ru/suggest-geo?part=${encodeURIComponent(query)}&lang=ru_RU`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            suggestionsContainer.innerHTML = '';
+            data.results.forEach(result => {
+                const div = document.createElement('div');
+                div.textContent = result.title;
+                div.onclick = () => {
+                    input.value = result.title;
+                    suggestionsContainer.innerHTML = '';
+                };
+                suggestionsContainer.appendChild(div);
+            });
+        });
+}
+
+// Заказ такси
 function orderTaxi() {
-    const from = document.getElementById('from').value;
-    const to = document.getElementById('to').value;
+    const from = fromInput.value;
+    const to = toInput.value;
     const price = document.getElementById('price').value;
 
     if (!from || !to || !price) {
